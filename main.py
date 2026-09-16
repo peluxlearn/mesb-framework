@@ -3,10 +3,14 @@ import json
 import os
 import sys
 
-from normalizers import normalize_semgrep
+from normalizers import (
+    normalize_semgrep,
+    normalize_dependency_check
+)
 
 
 def main():
+
     parser = argparse.ArgumentParser(
         description="MESB Security Findings Normalizer"
     )
@@ -14,6 +18,11 @@ def main():
     parser.add_argument(
         "--semgrep",
         help="Path to Semgrep JSON report"
+    )
+
+    parser.add_argument(
+        "--sca",
+        help="Path to OWASP Dependency-Check JSON report"
     )
 
     parser.add_argument(
@@ -26,22 +35,67 @@ def main():
 
     findings = []
 
+    # -------------------------
+    # SAST - Semgrep
+    # -------------------------
+
     if args.semgrep:
+
         if not os.path.exists(args.semgrep):
-            print(f"[ERROR] Semgrep report not found: {args.semgrep}")
+            print(
+                f"[ERROR] Semgrep report not found: "
+                f"{args.semgrep}"
+            )
             sys.exit(1)
 
-        semgrep_findings = normalize_semgrep(args.semgrep)
+        semgrep_findings = normalize_semgrep(
+            args.semgrep
+        )
 
-        findings.extend(semgrep_findings)
+        findings.extend(
+            semgrep_findings
+        )
 
         print(
             f"[MESB] Semgrep findings normalized: "
             f"{len(semgrep_findings)}"
         )
 
+    # -------------------------
+    # SCA - Dependency-Check
+    # -------------------------
+
+    if args.sca:
+
+        if not os.path.exists(args.sca):
+            print(
+                f"[ERROR] Dependency-Check report not found: "
+                f"{args.sca}"
+            )
+            sys.exit(1)
+
+        sca_findings = normalize_dependency_check(
+            args.sca
+        )
+
+        findings.extend(
+            sca_findings
+        )
+
+        print(
+            f"[MESB] Dependency-Check findings normalized: "
+            f"{len(sca_findings)}"
+        )
+
+    # -------------------------
+    # MESB Output
+    # -------------------------
+
     if not findings:
-        print("[WARNING] No findings were provided to MESB")
+        print(
+            "[WARNING] No security findings were "
+            "provided to MESB"
+        )
 
     output = {
         "framework": "MESB",
@@ -53,10 +107,15 @@ def main():
         ]
     }
 
-    output_dir = os.path.dirname(args.output)
+    output_dir = os.path.dirname(
+        args.output
+    )
 
     if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(
+            output_dir,
+            exist_ok=True
+        )
 
     with open(
         args.output,
@@ -71,8 +130,14 @@ def main():
             ensure_ascii=False
         )
 
+    print()
     print(
-        f"[MESB] Normalization completed"
+        f"[MESB] Total normalized findings: "
+        f"{len(findings)}"
+    )
+
+    print(
+        "[MESB] Normalization completed"
     )
 
     print(
