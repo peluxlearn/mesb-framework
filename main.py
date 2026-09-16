@@ -5,7 +5,8 @@ import sys
 
 from normalizers import (
     normalize_semgrep,
-    normalize_dependency_check
+    normalize_dependency_check,
+    normalize_gitleaks
 )
 
 
@@ -23,6 +24,11 @@ def main():
     parser.add_argument(
         "--sca",
         help="Path to OWASP Dependency-Check JSON report"
+    )
+
+    parser.add_argument(
+        "--gitleaks",
+        help="Path to Gitleaks JSON report"
     )
 
     parser.add_argument(
@@ -85,6 +91,32 @@ def main():
         print(
             f"[MESB] Dependency-Check findings normalized: "
             f"{len(sca_findings)}"
+        )
+
+    # -------------------------
+    # Secrets - Gitleaks
+    # -------------------------
+
+    if args.gitleaks:
+
+        if not os.path.exists(args.gitleaks):
+            print(
+                f"[ERROR] Gitleaks report not found: "
+                f"{args.gitleaks}"
+            )
+            sys.exit(1)
+
+        gitleaks_findings = normalize_gitleaks(
+            args.gitleaks
+        )
+
+        findings.extend(
+            gitleaks_findings
+        )
+
+        print(
+            f"[MESB] Gitleaks findings normalized: "
+            f"{len(gitleaks_findings)}"
         )
 
     # -------------------------
