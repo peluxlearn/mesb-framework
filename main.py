@@ -7,7 +7,9 @@ from normalizers import (
     normalize_semgrep,
     normalize_dependency_check,
     normalize_gitleaks,
-    normalize_grype
+    normalize_grype,
+    normalize_checkov,
+    normalize_zap
 )
 
 
@@ -35,6 +37,16 @@ def main():
     parser.add_argument(
         "--grype",
         help="Path to Grype JSON report"
+    )
+
+    parser.add_argument(
+        "--checkov",
+        help="Path to Checkov JSON report"
+    )
+
+    parser.add_argument(
+        "--zap",
+        help="Path to OWASP ZAP JSON report"
     )
 
     parser.add_argument(
@@ -149,6 +161,59 @@ def main():
         print(
             f"[MESB] Grype findings normalized: "
             f"{len(grype_findings)}"
+        )
+
+    # -------------------------
+    # IaC - Checkov
+    # -------------------------
+
+    if args.checkov:
+
+        if not os.path.exists(args.checkov):
+            print(
+                f"[ERROR] Checkov report not found: "
+                f"{args.checkov}"
+            )
+            sys.exit(1)
+
+        checkov_findings = normalize_checkov(
+            args.checkov
+        )
+
+        findings.extend(
+            checkov_findings
+        )
+
+        print(
+            f"[MESB] Checkov findings normalized: "
+            f"{len(checkov_findings)}"
+        )
+
+
+    # -------------------------
+    # DAST - OWASP ZAP
+    # -------------------------
+
+    if args.zap:
+
+        if not os.path.exists(args.zap):
+            print(
+                f"[ERROR] ZAP report not found: "
+                f"{args.zap}"
+            )
+            sys.exit(1)
+
+        zap_findings = normalize_zap(
+            args.zap
+        )
+
+        findings.extend(
+            zap_findings
+        )
+
+        print(
+            f"[MESB] ZAP findings normalized: "
+            f"{len(zap_findings)}"
         )
 
     # -------------------------
