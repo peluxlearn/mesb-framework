@@ -6,7 +6,8 @@ import sys
 from normalizers import (
     normalize_semgrep,
     normalize_dependency_check,
-    normalize_gitleaks
+    normalize_gitleaks,
+    normalize_grype
 )
 
 
@@ -29,6 +30,11 @@ def main():
     parser.add_argument(
         "--gitleaks",
         help="Path to Gitleaks JSON report"
+    )
+
+    parser.add_argument(
+        "--grype",
+        help="Path to Grype JSON report"
     )
 
     parser.add_argument(
@@ -117,6 +123,32 @@ def main():
         print(
             f"[MESB] Gitleaks findings normalized: "
             f"{len(gitleaks_findings)}"
+        )
+
+    # -------------------------
+    # Container - Grype
+    # -------------------------
+
+    if args.grype:
+
+        if not os.path.exists(args.grype):
+            print(
+                f"[ERROR] Grype report not found: "
+                f"{args.grype}"
+            )
+            sys.exit(1)
+
+        grype_findings = normalize_grype(
+            args.grype
+        )
+
+        findings.extend(
+            grype_findings
+        )
+
+        print(
+            f"[MESB] Grype findings normalized: "
+            f"{len(grype_findings)}"
         )
 
     # -------------------------
