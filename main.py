@@ -12,6 +12,7 @@ from normalizers import (
     normalize_zap
 )
 
+from correlation.engine import correlate_findings
 
 def main():
 
@@ -52,6 +53,12 @@ def main():
     parser.add_argument(
         "--zap-api",
         help="Path to OWASP ZAP API Scan JSON report"
+    )
+
+    parser.add_argument(
+        "--correlated-output",
+        default="output/correlated_findings.json",
+        help="Output path for correlated MESB security issues"
     )
 
     parser.add_argument(
@@ -276,18 +283,129 @@ def main():
             ensure_ascii=False
         )
 
+    # -------------------------
+    # MESB Correlation
+    # -------------------------
+
+    print()
+    print("[MESB] Running correlation engine...")
+
+    findings_dict = [
+        finding.to_dict()
+        for finding in findings
+    ]
+
+    correlated_issues = correlate_findings(
+        findings_dict
+    )
+
+    correlated_output = {
+        "framework": "MESB",
+        "version": "0.1.0",
+        "total_findings": len(findings),
+        "total_correlated_issues": len(correlated_issues),
+        "issues": [
+            issue.to_dict()
+            for issue in correlated_issues
+        ]
+    }
+
+    correlated_output_dir = os.path.dirname(
+        args.correlated_output
+    )
+
+    if correlated_output_dir:
+        os.makedirs(
+            correlated_output_dir,
+            exist_ok=True
+        )
+
+    with open(
+        args.correlated_output,
+        "w",
+        encoding="utf-8"
+    ) as file:
+
+        json.dump(
+            correlated_output,
+            file,
+            indent=2,
+            ensure_ascii=False
+        )
+
+    # -------------------------
+    # Correlation Metrics
+    # -------------------------
+
+    total_findings = len(findings)
+    total_issues = len(correlated_issues)
+
+    correlated_groups = [
+        issue
+        for issue in correlated_issues
+        if issue.occurrences > 1
+    ]
+
+    findings_in_correlated_groups = sum(
+        issue.occurrences
+        for issue in correlated_groups
+    )
+
+    if total_findings > 0:
+        reduction_percentage = (
+            (total_findings - total_issues)
+            / total_findings
+        ) * 100
+    else:
+        reduction_percentage = 0.0
+
     print()
     print(
-        f"[MESB] Total normalized findings: "
+        f"[MESB] Correlated issues: "
+        f"{total_issues}"
+    )
+
+    print(
+        f"[MESB] Multi-finding correlation groups: "
+        f"{len(correlated_groups)}"
+    )
+
+    print(
+        f"[MESB] Findings in correlation groups: "
+        f"{findings_in_correlated_groups}"
+    )
+
+    print(
+        f"[MESB] Correlation reduction: "
+        f"{reduction_percentage:.2f}%"
+    )
+
+    print(
+        f"[MESB] Correlated output: "
+        f"{args.correlated_output}"
+    )
+
+    print()
+    print("[MESB] Processing completed")
+
+    print(
+        f"[MESB] Normalized findings: "
         f"{len(findings)}"
     )
 
     print(
-        "[MESB] Normalization completed"
+        f"[MESB] Correlated issues: "
+        f"{len(correlated_issues)}"
     )
 
     print(
-        f"[MESB] Output: {args.output}"
+        f"[MESB] Normalized output: "
+        f"{args.output}"
+    )
+
+    print(
+        f"[MESB] Correlated output: "
+        f"{args.correlated_output}"
     )
 
 
