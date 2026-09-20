@@ -50,6 +50,11 @@ def main():
     )
 
     parser.add_argument(
+        "--zap-api",
+        help="Path to OWASP ZAP API Scan JSON report"
+    )
+
+    parser.add_argument(
         "--output",
         default="output/findings_normalized.json",
         help="Output path for normalized findings"
@@ -215,6 +220,18 @@ def main():
             f"[MESB] ZAP findings normalized: "
             f"{len(zap_findings)}"
         )
+
+    if args.zap_api and os.path.exists(args.zap_api):
+        print(f"[MESB] Normalizing ZAP API report: {args.zap_api}")
+        zap_api_findings = normalize_zap(args.zap_api)
+
+        # Rename IDs so they do not collide with the baseline ZAP findings.
+        for index, finding in enumerate(zap_api_findings, start=1):
+            finding.id = f"DAST-API-{index:03}"
+
+        findings.extend(zap_api_findings)
+
+        print(f"[MESB] ZAP API findings: {len(zap_api_findings)}")
 
     # -------------------------
     # MESB Output
